@@ -22,6 +22,9 @@ const (
 	configName     = "rf-clipboard.conf"
 	secretLen      = 32
 	requestTimeout = 30 * time.Second
+	// ceiling on how much we'll read from a server response, in case the
+	// server is compromised or misconfigured
+	maxPasteBytes = 64 << 20
 	infoAccountID  = "rf-clipboard/account-id"
 	infoEncryptKey = "rf-clipboard/encryption-key"
 	defaultServer  = "https://clip.runfridge.dev"
@@ -232,7 +235,7 @@ func pasteCmd() error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("server returned %s", resp.Status)
 	}
-	payload, err := io.ReadAll(resp.Body)
+	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxPasteBytes))
 	if err != nil {
 		return err
 	}
