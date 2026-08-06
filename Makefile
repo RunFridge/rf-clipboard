@@ -20,6 +20,7 @@ dist:
 	for os in linux darwin; do for arch in amd64 arm64; do \
 		$(MAKE) server client GOOS=$$os GOARCH=$$arch; \
 	done; done
+	$(MAKE) server client GOOS=android GOARCH=arm64 # Termux
 
 test:
 	go test ./...

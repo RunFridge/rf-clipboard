@@ -17,8 +17,10 @@ fi
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 arch=$(uname -m)
+# Termux reports Linux but needs the Bionic-targeted android binary
+[ -n "${TERMUX_VERSION:-}" ] && os=android
 case "$os" in
-  linux | darwin) ;;
+  linux | darwin | android) ;;
   *) echo "unsupported OS: $os" >&2; exit 1 ;;
 esac
 case "$arch" in
