@@ -62,6 +62,13 @@ One secret, two derived values (HKDF-SHA256):
 
 A compromised server yields ciphertext and opaque IDs, nothing else.
 
+The account ID is also the *write* capability: anyone who holds it — including
+the server operator — can overwrite or delete your clipboard, or replay an
+older ciphertext of yours. They can never read contents or forge new ones
+(GCM authentication fails on anything not encrypted with your key).
+Confidentiality and content integrity are guaranteed; availability is not
+part of the security model.
+
 ## Self-hosting the server
 
 ### Docker (recommended)
@@ -116,6 +123,10 @@ Every flag also reads an env var: `RF_CLIPD_ADDR`, `RF_CLIPD_TTL`,
 - `-persist` (optional) snapshots the map to a file on shutdown and on each
   sweep tick, and loads it on start — survives reboots, loses at most one
   sweep interval on a crash. The file contains only ciphertext.
+- When the store hits `max-entries`, *new* accounts are rejected (507) rather
+  than evicting existing entries — deliberate: ID-spraying spam can lock out
+  new accounts until TTL clears it, but it can never push out your data.
+  Watch for "store full" log lines; the remedy is raising `-max-entries`.
 - **Sizing:** worst-case memory ≈ `max-entries × max-size` (defaults: ~1 GB).
   Set the caps so that product fits your host's RAM; typical personal use is a
   few KB total, so any small VPS works.
