@@ -1,0 +1,24 @@
+.TH RF-PASTE 1 "August 2026" "rf-clipboard" "User Commands"
+.SH NAME
+rf-paste \- paste from an encrypted shared clipboard
+.SH SYNOPSIS
+.B rf-paste
+.SH DESCRIPTION
+.B rf-paste
+downloads the shared clipboard, decrypts it locally, and writes the
+plaintext to standard output. It is the counterpart of
+.BR rf-clip (1),
+which copies standard input to the clipboard.
+.PP
+Exits non-zero with a message on stderr if the clipboard is empty or the
+content cannot be decrypted.
+.SH EXAMPLES
+.nf
+.RS
+$ rf-paste
+$ rf-paste > file.txt
+.RE
+.fi
+.SH SEE ALSO
+.BR rf-clip (1),
+.BR rf-copy (1)

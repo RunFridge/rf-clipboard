@@ -1,0 +1,73 @@
+.TH RF-CLIP 1 "August 2026" "rf-clipboard" "User Commands"
+.SH NAME
+rf-clip \- copy stdin to an encrypted shared clipboard
+.SH SYNOPSIS
+.B command
+|
+.B rf-clip
+.br
+.B rf-clip init
+.RB [ \-f ]
+.br
+.B rf-clip paste
+.SH DESCRIPTION
+.B rf-clip
+uploads standard input to a shared clipboard server, synced across your
+devices. Content is encrypted on the client with AES-256-GCM before upload;
+the server only ever stores ciphertext under an anonymous account ID.
+.B rf-copy
+is an alias for
+.BR rf-clip .
+.PP
+Retrieve the clipboard with
+.BR rf-paste (1)
+(or
+.BR "rf-clip paste" ).
+.SH COMMANDS
+.TP
+.B init
+Generate a random 256-bit secret and write the config file. Refuses to
+overwrite an existing config unless
+.B \-f
+is given, because losing the secret orphans the server-side clipboard.
+The server URL defaults to the hosted instance; override it with the
+.B SERVER_URL
+environment variable.
+.TP
+.B paste
+Download and decrypt the clipboard to standard output. Equivalent to
+.BR rf-paste (1).
+.SH ENVIRONMENT
+.TP
+.B SERVER_URL
+Server URL used by
+.BR "rf-clip init" ,
+e.g.
+.BR SERVER_URL=https://clip.example.com " rf-clip init" .
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/rf-clipboard.conf
+Configuration (default
+.IR ~/.config/rf-clipboard.conf ),
+written with mode 0600. Contains the server URL and the secret. Copy this
+file to another device to share the clipboard with it.
+.SH EXAMPLES
+.PP
+Copy on one machine, paste on another:
+.PP
+.nf
+.RS
+$ echo 'hello world' | rf-clip
+$ rf-paste > file.txt
+.RE
+.fi
+.SH SECURITY
+One secret yields two independent values via HKDF-SHA256: the account ID
+sent to the server (a hash, revealing nothing) and the encryption key,
+which never leaves the client. A compromised server yields only ciphertext.
+.SH SEE ALSO
+.BR rf-copy (1),
+.BR rf-paste (1)
+.PP
+.UR https://github.com/RunFridge/rf-clipboard
+.UE

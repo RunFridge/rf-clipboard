@@ -1,0 +1,25 @@
+.TH RF-COPY 1 "August 2026" "rf-clipboard" "User Commands"
+.SH NAME
+rf-copy \- copy stdin to an encrypted shared clipboard (alias for rf-clip)
+.SH SYNOPSIS
+.B command
+|
+.B rf-copy
+.SH DESCRIPTION
+.B rf-copy
+is an alias for
+.BR rf-clip (1):
+it encrypts standard input on your device and uploads it to the shared
+clipboard server. Retrieve it on any of your devices with
+.BR rf-paste (1).
+.SH EXAMPLES
+.nf
+.RS
+$ echo 'hello world' | rf-copy
+$ rf-paste
+hello world
+.RE
+.fi
+.SH SEE ALSO
+.BR rf-clip (1),
+.BR rf-paste (1)
