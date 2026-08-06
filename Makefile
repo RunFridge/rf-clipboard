@@ -1,6 +1,7 @@
 GOOS   ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
-GOFLAGS = -trimpath -ldflags '-s -w'
+# -buildmode=pie: Android (Termux) refuses to exec non-PIE binaries
+GOFLAGS = -trimpath -buildmode=pie -ldflags '-s -w'
 
 .PHONY: all server client dist test clean
 
