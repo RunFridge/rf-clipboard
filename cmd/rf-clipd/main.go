@@ -224,7 +224,20 @@ func main() {
 		}
 	}()
 
-	srv := &http.Server{Addr: *addr, Handler: newHandler(s, maxSize)}
+	// slowloris protection when running without a reverse proxy in front
+	const (
+		readHeaderTimeout = 10 * time.Second
+		readWriteTimeout  = 30 * time.Second
+		idleTimeout       = 2 * time.Minute
+	)
+	srv := &http.Server{
+		Addr:              *addr,
+		Handler:           newHandler(s, maxSize),
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readWriteTimeout,
+		WriteTimeout:      readWriteTimeout,
+		IdleTimeout:       idleTimeout,
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() {
