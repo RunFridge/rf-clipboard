@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy &amp; Terms — rf-clipboard</title>
+<meta name="description" content="Privacy policy and terms of service for the hosted rf-clipboard service.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<link rel="alternate" hreflang="en" href="https://clip.runfridge.dev/privacy">
+<link rel="alternate" hreflang="ko" href="https://clip.runfridge.dev/ko/privacy">
+<link rel="alternate" hreflang="x-default" href="https://clip.runfridge.dev/privacy">
+<style>
+  :root {
+    --primary: #0066cc;
+    --canvas: #ffffff;
+    --parchment: #f5f5f7;
+    --black: #000000;
+    --ink: #1d1d1f;
+    --ink-muted-80: #333333;
+    --ink-muted-48: #7a7a7a;
+    --on-dark: #ffffff;
+    --font-display: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-text: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font-text); color: var(--ink); background: var(--canvas); }
+  nav {
+    background: var(--black);
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+  }
+  nav a {
+    color: var(--on-dark);
+    font-size: 12px;
+    letter-spacing: -0.12px;
+    text-decoration: none;
+    opacity: 0.92;
+  }
+  nav a:hover { opacity: 1; }
+  nav .links { display: flex; gap: 20px; }
+  main { max-width: 653px; margin: 0 auto; padding: 64px 22px 80px; }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.28px;
+    margin-bottom: 8px;
+  }
+  .updated { font-size: 14px; color: var(--ink-muted-48); letter-spacing: -0.224px; margin-bottom: 40px; }
+  h2 {
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.19;
+    letter-spacing: 0.231px;
+    margin: 40px 0 12px;
+  }
+  p, li { font-size: 17px; line-height: 1.47; letter-spacing: -0.374px; color: var(--ink-muted-80); }
+  p + p { margin-top: 12px; }
+  ul { padding-left: 22px; }
+  li { margin-top: 8px; }
+  a { color: var(--primary); text-decoration: none; }
+  footer {
+    background: var(--parchment);
+    color: var(--ink-muted-48);
+    font-size: 12px;
+    letter-spacing: -0.12px;
+    text-align: center;
+    padding: 32px 22px;
+  }
+  footer a { color: var(--ink-muted-80); }
+  @media (max-width: 640px) { h1 { font-size: 34px; } main { padding-top: 48px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/">rf-clipboard</a>
+  <div class="links">
+    <a href="/ko/privacy" lang="ko">한국어</a>
+    <a href="https://github.com/RunFridge/rf-clipboard">GitHub</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Privacy &amp; Terms</h1>
+  <p class="updated">Last updated: August 2026</p>
+
+  <h2>The service</h2>
+  <p>rf-clipboard is a <strong>free service</strong>, provided as-is, with no
+  warranty and no guarantee of availability. It may change or shut down at any
+  time.</p>
+  <p><strong>Clipboard data is ephemeral and can be removed at any time</strong> —
+  automatically when it goes unused past the server's retention window (TTL),
+  or by the operator at any moment without notice. Do not use it as storage
+  for anything you cannot afford to lose.</p>
+
+  <h2>What we can see</h2>
+  <p>Almost nothing, by design:</p>
+  <ul>
+    <li><strong>Clipboard contents</strong> are encrypted on your device with
+    AES-256-GCM before upload. The encryption key never leaves your machine.
+    We store ciphertext we cannot read, and we could not decrypt it even if
+    compelled to.</li>
+    <li><strong>Accounts</strong> are anonymous hashes derived on your device.
+    There is no sign-up: no name, no email, no password, no profile.</li>
+    <li><strong>Server logs</strong>: like nearly every website, our reverse
+    proxy records standard access logs (IP address, timestamp, request path)
+    for security and abuse prevention. Logs are kept briefly and rotated; they
+    are not shared, sold, or used for anything else.</li>
+  </ul>
+
+  <h2>Your responsibilities</h2>
+  <ul>
+    <li>Your secret (in <code>rf-clipboard.conf</code>) is the only key to
+    your clipboard. If you lose it, your data is unrecoverable — by anyone.</li>
+    <li>Because content is encrypted, we cannot review or moderate it. You are
+    responsible for what you store and for complying with applicable law.</li>
+    <li>Abuse (flooding, automated bulk use) may be rate-limited or blocked.</li>
+  </ul>
+
+  <h2>Data removal</h2>
+  <p>Entries expire automatically after the retention window. To remove your
+  data immediately, overwrite it (<code>echo | rf-clip</code>) and let the TTL
+  clear it, or delete your local config to abandon the account — without the
+  secret, the stored ciphertext is permanently indecipherable noise.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or removal requests: open an issue on
+  <a href="https://github.com/RunFridge/rf-clipboard">GitHub</a>.</p>
+</main>
+
+<footer>
+  <a href="/">rf-clipboard</a> — MIT licensed, self-hosted, yours.
+</footer>
+
+</body>
+</html>

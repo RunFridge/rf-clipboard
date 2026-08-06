@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rf-clipboard — 터미널을 위한 암호화 공유 클립보드</title>
+<meta name="description" content="여러 기기에서 동기화되는 CLI 공유 클립보드. 종단간 암호화로 서버는 암호문만 저장합니다.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<link rel="alternate" hreflang="en" href="https://clip.runfridge.dev/">
+<link rel="alternate" hreflang="ko" href="https://clip.runfridge.dev/ko">
+<link rel="alternate" hreflang="x-default" href="https://clip.runfridge.dev/">
+<meta property="og:title" content="rf-clipboard — 터미널을 위한 암호화 공유 클립보드">
+<meta property="og:description" content="하나의 클립보드. 모든 터미널에서. 종단간 암호화로 서버는 암호문만 봅니다.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://clip.runfridge.dev/ko">
+<meta property="og:site_name" content="rf-clipboard">
+<meta name="twitter:card" content="summary">
+<style>
+  /* Design tokens per DESIGN.md */
+  :root {
+    --primary: #0066cc;
+    --primary-focus: #0071e3;
+    --primary-on-dark: #2997ff;
+    --canvas: #ffffff;
+    --parchment: #f5f5f7;
+    --tile-dark: #272729;
+    --tile-dark-3: #252527;
+    --black: #000000;
+    --ink: #1d1d1f;
+    --ink-muted-80: #333333;
+    --ink-muted-48: #7a7a7a;
+    --on-dark: #ffffff;
+    --muted-on-dark: #cccccc;
+    --hairline: #e0e0e0;
+    --font-display: "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-text: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-text);
+    color: var(--ink);
+    background: var(--canvas);
+    word-break: keep-all; /* Hangul wraps at word boundaries */
+  }
+
+  /* global-nav: thin true-black bar */
+  nav {
+    background: var(--black);
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+  }
+  nav .brand, nav a {
+    color: var(--on-dark);
+    font-size: 12px;
+    letter-spacing: -0.12px;
+    text-decoration: none;
+    opacity: 0.92;
+  }
+  nav a:hover { opacity: 1; }
+  nav .links { display: flex; gap: 20px; }
+
+  /* Full-bleed tiles: color change is the divider, no borders, no rounding */
+  section { padding: 80px 22px; text-align: center; }
+  .tile-light { background: var(--canvas); color: var(--ink); }
+  .tile-parchment { background: var(--parchment); color: var(--ink); }
+  .tile-dark { background: var(--tile-dark); color: var(--on-dark); }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 56px;
+    font-weight: 600;
+    line-height: 1.07;
+    letter-spacing: -0.28px;
+  }
+  .lead {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.14;
+    letter-spacing: 0.196px;
+    margin-top: 12px;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .tagline {
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.19;
+    letter-spacing: 0.231px;
+  }
+  p.body { font-size: 17px; line-height: 1.47; letter-spacing: -0.374px; }
+  .muted { color: var(--ink-muted-48); }
+  .tile-dark p.body { color: var(--muted-on-dark); }
+  .tile-dark a { color: var(--primary-on-dark); text-decoration: none; }
+
+  .ctas { display: flex; gap: 16px; justify-content: center; margin-top: 32px; }
+  .pill {
+    display: inline-block;
+    font-size: 17px;
+    letter-spacing: -0.374px;
+    padding: 11px 22px;
+    border-radius: 9999px;
+    text-decoration: none;
+  }
+  .pill-primary { background: var(--primary); color: #fff; }
+  .pill-ghost { color: var(--primary); border: 1px solid var(--primary); }
+  .pill:active { transform: scale(0.95); }
+  .pill:focus-visible { outline: 2px solid var(--primary-focus); outline-offset: 2px; }
+
+  /* The product render: a terminal window resting on the surface.
+     Carries the system's single drop-shadow. */
+  .term {
+    max-width: 640px;
+    margin: 48px auto 0;
+    background: var(--tile-dark-3);
+    border-radius: 11px;
+    box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0;
+    text-align: left;
+    overflow-x: auto;
+  }
+  .term-bar { display: flex; gap: 8px; padding: 13px 16px; }
+  .term-bar span { width: 12px; height: 12px; border-radius: 50%; }
+  .term-bar span:nth-child(1) { background: #ff5f57; }
+  .term-bar span:nth-child(2) { background: #febc2e; }
+  .term-bar span:nth-child(3) { background: #28c840; }
+  .term pre {
+    padding: 4px 24px 28px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    line-height: 2;
+    color: var(--on-dark);
+  }
+  .term .c { color: var(--ink-muted-48); }
+  .term .p { color: #28c840; user-select: none; }
+
+  /* Feature columns on the dark tile */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    max-width: 980px;
+    margin: 48px auto 0;
+    text-align: left;
+  }
+  .feature .tagline { margin-bottom: 8px; }
+
+  /* Install: utility card grammar on parchment */
+  .install-card {
+    position: relative;
+    max-width: 640px;
+    margin: 32px auto 0;
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 18px;
+    padding: 24px;
+    text-align: left;
+    overflow-x: auto;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-family: var(--font-text);
+    font-size: 14px;
+    letter-spacing: -0.224px;
+    color: var(--primary);
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .copy-btn:active { transform: scale(0.95); }
+  .copy-btn:focus-visible { outline: 2px solid var(--primary-focus); outline-offset: 2px; }
+  .install-card pre {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--ink-muted-80);
+    white-space: pre;
+  }
+  /* quiet, rounded scrollbar for the long command line */
+  .install-card { scrollbar-width: thin; scrollbar-color: var(--hairline) transparent; }
+  .install-card::-webkit-scrollbar { height: 8px; }
+  .install-card::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 4px; }
+  .install-card::-webkit-scrollbar-track { background: transparent; }
+  .term { scrollbar-width: thin; scrollbar-color: var(--ink-muted-48) transparent; }
+  .term::-webkit-scrollbar { height: 8px; }
+  .term::-webkit-scrollbar-thumb { background: var(--ink-muted-48); border-radius: 4px; }
+  .term::-webkit-scrollbar-track { background: transparent; }
+  .install-card .c { color: var(--ink-muted-48); }
+  .install-card .cmd { color: var(--ink); font-weight: 600; }
+  .install-card .flag { color: var(--ink-muted-48); }
+  .install-card .str { color: var(--primary); }
+  .install-card .op { color: var(--ink-muted-48); }
+  .install-card + .install-card { margin-top: 16px; }
+
+  footer {
+    background: var(--parchment);
+    color: var(--ink-muted-48);
+    font-size: 12px;
+    letter-spacing: -0.12px;
+    text-align: center;
+    padding: 32px 22px;
+  }
+  footer a { color: var(--ink-muted-80); }
+
+  @media (max-width: 1068px) { h1 { font-size: 40px; } }
+  @media (max-width: 735px)  { section { padding: 48px 22px; } }
+  @media (max-width: 640px)  {
+    h1 { font-size: 34px; }
+    h2 { font-size: 34px; }
+    .lead { font-size: 21px; }
+    .ctas { flex-direction: column; align-items: center; }
+  }
+  @media (max-width: 419px)  { h1 { font-size: 28px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">rf-clipboard</span>
+  <div class="links">
+    <a href="/">English</a>
+    <a href="https://github.com/RunFridge/rf-clipboard">GitHub</a>
+  </div>
+</nav>
+
+<!-- Hero: light tile -->
+<section class="tile-light">
+  <h1>rf-clipboard</h1>
+  <p class="lead">하나의 클립보드. 모든 터미널에서.</p>
+  <div class="ctas">
+    <a class="pill pill-primary" href="#install">설치하기</a>
+    <a class="pill pill-ghost" href="https://github.com/RunFridge/rf-clipboard">더 알아보기</a>
+  </div>
+  <div class="term">
+    <div class="term-bar"><span></span><span></span><span></span></div>
+    <pre><span class="c"># 기기 A에서</span>
+<span class="p">$</span> echo 'hello world' | rf-clip
+
+<span class="c"># 기기 B에서</span>
+<span class="p">$</span> rf-paste
+hello world</pre>
+  </div>
+</section>
+
+<!-- Dark tile: privacy -->
+<section class="tile-dark">
+  <h2>구조적으로 프라이빗.</h2>
+  <p class="lead" style="letter-spacing:0.196px; font-weight:400;">서버는 암호문만 볼 수 있습니다.</p>
+  <div class="features">
+    <div class="feature">
+      <p class="tagline">영지식 암호화</p>
+      <p class="body">AES-256-GCM 암호화는 사용자의 기기에서 실행됩니다. 암호화 키는 로컬에서 생성되며 어디로도 전송되지 않습니다.</p>
+    </div>
+    <div class="feature">
+      <p class="tagline">가입 없음</p>
+      <p class="body">계정은 사용자만 가진 시크릿의 익명 해시입니다. 이메일도, 비밀번호도, 개인정보도 없습니다.</p>
+    </div>
+    <div class="feature">
+      <p class="tagline">셀프 호스팅</p>
+      <p class="body">정적 바이너리 하나 또는 scratch 도커 이미지. 어떤 리버스 프록시 뒤에서든 <a href="https://github.com/RunFridge/rf-clipboard#self-hosting-the-server">직접 운영</a>할 수 있습니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Parchment tile: install -->
+<section class="tile-parchment" id="install">
+  <h2>몇 초면 준비 완료.</h2>
+  <div class="install-card">
+    <button class="copy-btn" data-copy="install-curl" aria-label="설치 명령어 복사">복사</button>
+    <pre><span class="c"># 클라이언트 설치 (rf-clip · rf-copy · rf-paste)</span>
+<span id="install-curl"><span class="cmd">curl</span> <span class="flag">-fsSL</span> <span class="str">https://raw.githubusercontent.com/RunFridge/rf-clipboard/main/scripts/install.sh</span> <span class="op">|</span> <span class="cmd">sh</span></span></pre>
+  </div>
+  <div class="install-card">
+    <button class="copy-btn" data-copy="install-init" aria-label="초기화 명령어 복사">복사</button>
+    <pre><span class="c"># 시크릿 생성</span>
+<span id="install-init"><span class="cmd">rf-clip</span> init</span></pre>
+  </div>
+  <div class="ctas">
+    <a class="pill pill-primary" href="https://github.com/RunFridge/rf-clipboard/releases/latest">바이너리 다운로드</a>
+  </div>
+</section>
+
+<footer>
+  <a href="https://github.com/RunFridge/rf-clipboard">rf-clipboard</a> — MIT 라이선스 · 셀프 호스팅 · 당신의 것. · <a href="/ko/privacy">개인정보 처리방침 및 이용약관</a>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(document.getElementById(btn.dataset.copy).innerText).then(() => {
+        btn.textContent = '복사됨';
+        setTimeout(() => { btn.textContent = '복사'; }, 2000);
+      }).catch(() => { btn.textContent = '⌘C를 누르세요'; });
+    });
+  });
+</script>
+
+</body>
+</html>
