@@ -1,0 +1,16 @@
+services:
+  rf-clipd:
+    image: ghcr.io/runfridge/rf-clipd:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080" # keep localhost-only; TLS reverse proxy goes in front
+    environment:
+      RF_CLIPD_PERSIST: /data/snap.gob
+      # RF_CLIPD_TTL: 24h
+      # RF_CLIPD_MAX_SIZE: "1048576"
+      # RF_CLIPD_MAX_ENTRIES: "1000"
+    volumes:
+      - data:/data
+
+volumes:
+  data:
