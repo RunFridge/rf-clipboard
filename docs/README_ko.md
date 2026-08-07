@@ -58,6 +58,15 @@ SERVER_URL=https://clip.example.com rf-clip init
 시크릿을 잃으면 서버 쪽 데이터에 접근할 수 없게 되므로, `init`은 `-f`를
 주지 않는 한 기존 설정 파일을 덮어쓰지 않습니다.
 
+### 시스템 클립보드
+
+설정 파일에 `system_clipboard=true`를 넣으면 `rf-copy`/`rf-clip`이 암호화
+업로드와 함께 평문을 로컬 시스템 클립보드에도 복사합니다.
+`termux-clipboard-set`, `pbcopy`(macOS), `wl-copy`(Wayland),
+`xclip`/`xsel`(X11), `clip.exe`(WSL) 중 처음 발견되는 도구를 사용하므로
+플랫폼에 맞는 도구를 설치하세요. 도구가 없거나 실패하면 stderr에 경고만
+출력되고, 종료 코드는 업로드 결과를 따릅니다. 기본값은 `false`입니다.
+
 ## 암호화 동작 방식
 
 하나의 시크릿에서 두 값을 파생합니다(HKDF-SHA256):

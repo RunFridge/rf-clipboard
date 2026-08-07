@@ -13,7 +13,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -24,7 +26,7 @@ const (
 	requestTimeout = 30 * time.Second
 	// ceiling on how much we'll read from a server response, in case the
 	// server is compromised or misconfigured
-	maxPasteBytes = 64 << 20
+	maxPasteBytes  = 64 << 20
 	infoAccountID  = "rf-clipboard/account-id"
 	infoEncryptKey = "rf-clipboard/encryption-key"
 	defaultServer  = "https://clip.runfridge.dev"
@@ -32,8 +34,9 @@ const (
 )
 
 type config struct {
-	server string
-	secret []byte
+	server          string
+	secret          []byte
+	systemClipboard bool
 }
 
 func configPath() (string, error) {
@@ -64,6 +67,12 @@ func parseConfig(data []byte) (config, error) {
 				return c, errors.New("config: secret must be 64 hex chars")
 			}
 			c.secret = sec
+		case "system_clipboard":
+			b, err := strconv.ParseBool(val)
+			if err != nil {
+				return c, fmt.Errorf("config: system_clipboard must be true or false, got %q", val)
+			}
+			c.systemClipboard = b
 		}
 	}
 	if c.server == "" || c.secret == nil {
@@ -163,7 +172,7 @@ func initCmd(args []string) error {
 
 	secret := make([]byte, secretLen)
 	rand.Read(secret)
-	content := fmt.Sprintf("server=%s\nsecret=%s\n", strings.TrimRight(server, "/"), hex.EncodeToString(secret))
+	content := fmt.Sprintf("server=%s\nsecret=%s\nsystem_clipboard=false\n", strings.TrimRight(server, "/"), hex.EncodeToString(secret))
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -171,6 +180,41 @@ func initCmd(args []string) error {
 		return err
 	}
 	fmt.Fprintf(os.Stderr, "wrote %s — copy this file to your other devices to share the clipboard\n", path)
+	return nil
+}
+
+// clipboardTool picks the local clipboard writer for this environment;
+// nil when none is available.
+func clipboardTool() []string {
+	candidates := [][]string{
+		{"termux-clipboard-set"},             // Termux (Android)
+		{"pbcopy"},                           // macOS
+		{"wl-copy"},                          // Wayland
+		{"xclip", "-selection", "clipboard"}, // X11
+		{"xsel", "-ib"},                      // X11
+		{"clip.exe"},                         // WSL
+	}
+	for _, c := range candidates {
+		if c[0] == "wl-copy" && os.Getenv("WAYLAND_DISPLAY") == "" {
+			continue
+		}
+		if _, err := exec.LookPath(c[0]); err == nil {
+			return c
+		}
+	}
+	return nil
+}
+
+func copyToSystem(data []byte) error {
+	tool := clipboardTool()
+	if tool == nil {
+		return errors.New("system_clipboard is on but no clipboard tool found (termux-clipboard-set, pbcopy, wl-copy, xclip, xsel, clip.exe)")
+	}
+	cmd := exec.Command(tool[0], tool[1:]...)
+	cmd.Stdin = bytes.NewReader(data)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: %w", tool[0], err)
+	}
 	return nil
 }
 
@@ -189,6 +233,12 @@ func copyCmd() error {
 	plaintext, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return err
+	}
+	// best-effort: the encrypted upload is the primary job and owns the exit code
+	if c.systemClipboard {
+		if err := copyToSystem(plaintext); err != nil {
+			fmt.Fprintln(os.Stderr, "rf-clip: warning:", err)
+		}
 	}
 	payload, err := encrypt(key, plaintext)
 	if err != nil {

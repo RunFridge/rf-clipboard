@@ -51,6 +51,32 @@ Configuration (default
 .IR ~/.config/rf-clipboard.conf ),
 written with mode 0600. Contains the server URL and the secret. Copy this
 file to another device to share the clipboard with it.
+.SH CONFIGURATION
+Settings in the config file, one
+.B key=value
+per line:
+.TP
+.B server
+Clipboard server URL.
+.TP
+.B secret
+The 256-bit secret, 64 hex characters.
+.TP
+.B system_clipboard
+When
+.BR true ,
+copying also writes the plaintext to the local system clipboard using the
+first available tool among
+.BR termux\-clipboard\-set ,
+.BR pbcopy ,
+.BR wl\-copy ,
+.BR xclip ,
+.BR xsel ,
+and
+.BR clip.exe .
+Best-effort: a missing or failing tool prints a warning but does not fail
+the copy. Default
+.BR false .
 .SH EXAMPLES
 .PP
 Copy on one machine, paste on another:

@@ -57,6 +57,16 @@ mode 0600). Copy that file to your other devices — sharing the secret is what
 shares the clipboard. `init` refuses to overwrite an existing config unless you
 pass `-f`, because losing the secret orphans the server-side data.
 
+### System clipboard
+
+Set `system_clipboard=true` in the config to make `rf-copy`/`rf-clip` also
+copy the plaintext to the local system clipboard, alongside the encrypted
+upload. It uses the first tool found among `termux-clipboard-set`, `pbcopy`
+(macOS), `wl-copy` (Wayland), `xclip`/`xsel` (X11), and `clip.exe` (WSL) —
+install one for your platform. Best-effort: if the tool is missing or fails,
+you get a warning on stderr but the upload still decides the exit code.
+Default `false`.
+
 ## How the crypto works
 
 One secret, two derived values (HKDF-SHA256):
