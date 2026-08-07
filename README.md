@@ -1,5 +1,12 @@
 # rf-clipboard
 
+[![ci](https://github.com/RunFridge/rf-clipboard/actions/workflows/ci.yml/badge.svg)](https://github.com/RunFridge/rf-clipboard/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/RunFridge/rf-clipboard)](https://github.com/RunFridge/rf-clipboard/releases/latest)
+[![go](https://img.shields.io/github/go-mod/go-version/RunFridge/rf-clipboard)](go.mod)
+[![license](https://img.shields.io/github/license/RunFridge/rf-clipboard)](LICENSE)
+
+English | [한국어](docs/README_ko.md)
+
 A shared clipboard for the CLI, synced across your UNIX-like devices through a
 self-hosted server. Contents are encrypted on the client with a key the server
 never sees — the server stores only ciphertext under an anonymous account ID.
