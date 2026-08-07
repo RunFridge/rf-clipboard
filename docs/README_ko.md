@@ -121,8 +121,8 @@ rf-clipd -addr :8080 -ttl 24h -max-size 1048576 -max-entries 1000 -persist /var/
 ```
 
 모든 플래그는 환경 변수로도 읽습니다: `RF_CLIPD_ADDR`, `RF_CLIPD_TTL`,
-`RF_CLIPD_MAX_SIZE`, `RF_CLIPD_MAX_ENTRIES`, `RF_CLIPD_PERSIST`(플래그가
-우선).
+`RF_CLIPD_MAX_SIZE`, `RF_CLIPD_MAX_ENTRIES`, `RF_CLIPD_PERSIST`,
+`RF_CLIPD_HERO`(플래그가 우선).
 
 ### 참고 사항
 
@@ -138,6 +138,9 @@ rf-clipd -addr :8080 -ttl 24h -max-size 1048576 -max-entries 1000 -persist /var/
 - **용량 산정:** 최악의 경우 메모리 ≈ `max-entries × max-size`(기본값
   기준 약 1 GB). 이 곱이 호스트 RAM에 들어가도록 상한을 정하세요. 일반적인
   개인 사용은 총 몇 KB 수준이라 작은 VPS로도 충분합니다.
+- 서버는 `/`에서 랜딩 페이지를 제공합니다(`/privacy`와 `/ko` 변형 포함).
+  `-hero=false`(또는 `RF_CLIPD_HERO=false`)로 끄면 API 전용 서버가 되며,
+  해당 경로는 404를 반환합니다.
 - 서버는 평문 HTTP로 통신합니다. TLS를 종단하는 리버스 프록시(Caddy,
   nginx, Traefik) 뒤에서 실행하세요 — 계정 토큰이 헤더로 전달되고, 클립
   내용은 이미 클라이언트에서 암호화되어 있습니다.

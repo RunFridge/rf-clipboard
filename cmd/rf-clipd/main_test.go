@@ -25,7 +25,7 @@ func doReq(t *testing.T, h http.Handler, method, auth string, body []byte) *http
 }
 
 func TestPutGetRoundTrip(t *testing.T) {
-	h := newHandler(newStore(time.Hour, 10), 1024)
+	h := newHandler(newStore(time.Hour, 10), 1024, true)
 	data := []byte("ciphertext blob")
 
 	if w := doReq(t, h, http.MethodPut, testID, data); w.Code != http.StatusNoContent {
@@ -41,7 +41,7 @@ func TestPutGetRoundTrip(t *testing.T) {
 }
 
 func TestGetUnknownID(t *testing.T) {
-	h := newHandler(newStore(time.Hour, 10), 1024)
+	h := newHandler(newStore(time.Hour, 10), 1024, true)
 	other := strings.Repeat("b", 64)
 	if w := doReq(t, h, http.MethodGet, other, nil); w.Code != http.StatusNotFound {
 		t.Fatalf("got %d, want 404", w.Code)
@@ -49,7 +49,7 @@ func TestGetUnknownID(t *testing.T) {
 }
 
 func TestAuthRejected(t *testing.T) {
-	h := newHandler(newStore(time.Hour, 10), 1024)
+	h := newHandler(newStore(time.Hour, 10), 1024, true)
 	for _, auth := range []string{"", "short", strings.Repeat("z", 64)} {
 		if w := doReq(t, h, http.MethodGet, auth, nil); w.Code != http.StatusUnauthorized {
 			t.Fatalf("auth %q: got %d, want 401", auth, w.Code)
@@ -58,7 +58,7 @@ func TestAuthRejected(t *testing.T) {
 }
 
 func TestOversizedBody(t *testing.T) {
-	h := newHandler(newStore(time.Hour, 10), 8)
+	h := newHandler(newStore(time.Hour, 10), 8, true)
 	w := doReq(t, h, http.MethodPut, testID, bytes.Repeat([]byte("x"), 9))
 	if w.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("got %d, want 413", w.Code)
@@ -67,7 +67,7 @@ func TestOversizedBody(t *testing.T) {
 
 func TestMaxEntries(t *testing.T) {
 	s := newStore(time.Hour, 1)
-	h := newHandler(s, 1024)
+	h := newHandler(s, 1024, true)
 	doReq(t, h, http.MethodPut, testID, []byte("a"))
 	other := strings.Repeat("b", 64)
 	if w := doReq(t, h, http.MethodPut, other, []byte("b")); w.Code != http.StatusInsufficientStorage {
@@ -111,8 +111,25 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	}
 }
 
+func TestHeroDisabled(t *testing.T) {
+	h := newHandler(newStore(time.Hour, 10), 1024, false)
+	for _, path := range []string{"/", "/privacy", "/ko", "/ko/privacy"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("GET %s with hero disabled: got %d, want 404", path, w.Code)
+		}
+	}
+	// API still works
+	h2 := newHandler(newStore(time.Hour, 10), 1024, false)
+	if w := doReq(t, h2, http.MethodPut, testID, []byte("x")); w.Code != http.StatusNoContent {
+		t.Fatalf("PUT with hero disabled: got %d, want 204", w.Code)
+	}
+}
+
 func TestPages(t *testing.T) {
-	h := newHandler(newStore(time.Hour, 10), 1024)
+	h := newHandler(newStore(time.Hour, 10), 1024, true)
 	for path, want := range map[string]string{
 		"/":           "rf-clipboard",
 		"/privacy":    "free service",

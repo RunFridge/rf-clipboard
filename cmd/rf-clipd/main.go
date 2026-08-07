@@ -120,7 +120,7 @@ func accountID(r *http.Request) (string, bool) {
 	return tok, true
 }
 
-func newHandler(s *store, maxSize int64) http.Handler {
+func newHandler(s *store, maxSize int64, hero bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("PUT /v1/clip", func(w http.ResponseWriter, r *http.Request) {
 		id, ok := accountID(r)
@@ -151,11 +151,13 @@ func newHandler(s *store, maxSize int64) http.Handler {
 			w.Write(body)
 		}
 	}
-	mux.HandleFunc("GET /{$}", page(web.Index))
-	mux.HandleFunc("GET /privacy", page(web.Privacy))
-	mux.HandleFunc("GET /ko", page(web.IndexKo))
-	mux.HandleFunc("GET /ko/{$}", page(web.IndexKo))
-	mux.HandleFunc("GET /ko/privacy", page(web.PrivacyKo))
+	if hero {
+		mux.HandleFunc("GET /{$}", page(web.Index))
+		mux.HandleFunc("GET /privacy", page(web.Privacy))
+		mux.HandleFunc("GET /ko", page(web.IndexKo))
+		mux.HandleFunc("GET /ko/{$}", page(web.IndexKo))
+		mux.HandleFunc("GET /ko/privacy", page(web.PrivacyKo))
+	}
 	mux.HandleFunc("GET /v1/clip", func(w http.ResponseWriter, r *http.Request) {
 		id, ok := accountID(r)
 		if !ok {
@@ -186,6 +188,7 @@ func main() {
 	maxSizeStr := flag.String("max-size", envOr("RF_CLIPD_MAX_SIZE", "1048576"), "max clipboard size in bytes")
 	maxEntriesStr := flag.String("max-entries", envOr("RF_CLIPD_MAX_ENTRIES", "1000"), "max stored entries")
 	persist := flag.String("persist", envOr("RF_CLIPD_PERSIST", ""), "snapshot file path (empty = memory only)")
+	heroStr := flag.String("hero", envOr("RF_CLIPD_HERO", "true"), "serve the landing/privacy pages (false = API only)")
 	flag.Parse()
 
 	ttl, err := time.ParseDuration(*ttlStr)
@@ -199,6 +202,10 @@ func main() {
 	maxEntries, err := strconv.Atoi(*maxEntriesStr)
 	if err != nil {
 		log.Fatalf("invalid -max-entries: %v", err)
+	}
+	hero, err := strconv.ParseBool(*heroStr)
+	if err != nil {
+		log.Fatalf("invalid -hero: %v", err)
 	}
 
 	s := newStore(ttl, maxEntries)
@@ -232,7 +239,7 @@ func main() {
 	)
 	srv := &http.Server{
 		Addr:              *addr,
-		Handler:           newHandler(s, maxSize),
+		Handler:           newHandler(s, maxSize, hero),
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readWriteTimeout,
 		WriteTimeout:      readWriteTimeout,

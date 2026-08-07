@@ -121,7 +121,8 @@ rf-clipd -addr :8080 -ttl 24h -max-size 1048576 -max-entries 1000 -persist /var/
 ```
 
 Every flag also reads an env var: `RF_CLIPD_ADDR`, `RF_CLIPD_TTL`,
-`RF_CLIPD_MAX_SIZE`, `RF_CLIPD_MAX_ENTRIES`, `RF_CLIPD_PERSIST` (flags win).
+`RF_CLIPD_MAX_SIZE`, `RF_CLIPD_MAX_ENTRIES`, `RF_CLIPD_PERSIST`,
+`RF_CLIPD_HERO` (flags win).
 
 ### Notes
 
@@ -137,6 +138,9 @@ Every flag also reads an env var: `RF_CLIPD_ADDR`, `RF_CLIPD_TTL`,
 - **Sizing:** worst-case memory ≈ `max-entries × max-size` (defaults: ~1 GB).
   Set the caps so that product fits your host's RAM; typical personal use is a
   few KB total, so any small VPS works.
+- The server serves a landing page at `/` (plus `/privacy` and the `/ko`
+  variants). `-hero=false` (or `RF_CLIPD_HERO=false`) turns them off for an
+  API-only server — those paths then return 404.
 - The server speaks plain HTTP. Run it behind a TLS-terminating reverse proxy
   (Caddy, nginx, Traefik) — the account token travels in a header, and clip
   contents are already client-side encrypted.

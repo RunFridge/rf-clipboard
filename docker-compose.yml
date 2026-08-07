@@ -9,6 +9,7 @@ services:
       # RF_CLIPD_TTL: 24h
       # RF_CLIPD_MAX_SIZE: "1048576"
       # RF_CLIPD_MAX_ENTRIES: "1000"
+      # RF_CLIPD_HERO: "false" # disable the landing/privacy pages (API only)
     volumes:
       - data:/data
 
