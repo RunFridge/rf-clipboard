@@ -126,8 +126,19 @@
     text-align: left;
     overflow-x: auto;
   }
-  .term-bar { display: flex; gap: 8px; padding: 13px 16px; }
+  .term-bar { display: flex; gap: 8px; padding: 13px 16px; position: relative; align-items: center; }
   .term-bar span { width: 12px; height: 12px; border-radius: 50%; }
+  .term-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: var(--font-text);
+    font-size: 12px;
+    letter-spacing: -0.12px;
+    color: var(--ink-muted-48);
+    pointer-events: none;
+  }
   .term-bar span:nth-child(1) { background: #ff5f57; }
   .term-bar span:nth-child(2) { background: #febc2e; }
   .term-bar span:nth-child(3) { background: #28c840; }
@@ -140,6 +151,27 @@
   }
   .term .c { color: var(--ink-muted-48); }
   .term .p { color: #28c840; user-select: none; }
+
+  /* Two-terminal animated demo */
+  .demo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 980px;
+    margin: 48px auto 0;
+  }
+  .demo .term { margin: 0; max-width: none; }
+  .demo pre { min-height: calc(6em + 32px); } /* 3 lines at line-height 2 + padding: no layout jump while typing */
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1.15em;
+    vertical-align: text-bottom;
+    background: var(--on-dark);
+    animation: blink 1.06s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (max-width: 735px) { .demo { grid-template-columns: 1fr; } }
 
   /* Feature columns on the dark tile */
   .features {
@@ -242,14 +274,18 @@
     <a class="pill pill-primary" href="#install">설치하기</a>
     <a class="pill pill-ghost" href="https://github.com/RunFridge/rf-clipboard">더 알아보기</a>
   </div>
-  <div class="term">
-    <div class="term-bar"><span></span><span></span><span></span></div>
-    <pre><span class="c"># 기기 A에서</span>
-<span class="p">$</span> echo 'hello world' | rf-copy
-
-<span class="c"># 기기 B에서</span>
-<span class="p">$</span> rf-paste
-hello world</pre>
+  <div class="demo">
+    <div class="term">
+      <div class="term-bar"><span></span><span></span><span></span><div class="term-title">기기 A</div></div>
+      <pre id="demo-a"><span class="p">$</span> echo 'hello world' | rf-copy
+<span class="p">$</span> </pre>
+    </div>
+    <div class="term">
+      <div class="term-bar"><span></span><span></span><span></span><div class="term-title">기기 B</div></div>
+      <pre id="demo-b"><span class="p">$</span> rf-paste
+hello world
+<span class="p">$</span> </pre>
+    </div>
   </div>
 </section>
 
@@ -296,6 +332,42 @@ hello world</pre>
 </footer>
 
 <script>
+  // Two-terminal typing demo. The markup's static content is the final frame,
+  // so no-JS and prefers-reduced-motion users still see the full example.
+  (() => {
+    const a = document.getElementById('demo-a'), b = document.getElementById('demo-b');
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const PROMPT = '<span class="p">$</span> ';
+    const CURSOR = '<span class="cursor"></span>';
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const render = (pre, lines, cursor) => {
+      pre.innerHTML = lines.map((l) => (l.p ? PROMPT : '') + l.t).join('\n') + (cursor ? CURSOR : '');
+    };
+    const typeLine = async (pre, lines, text) => {
+      for (const ch of text) {
+        lines[lines.length - 1].t += ch;
+        render(pre, lines, true);
+        await sleep(45);
+      }
+    };
+    (async () => {
+      for (;;) {
+        const la = [{ p: 1, t: '' }], lb = [{ p: 1, t: '' }];
+        render(a, la, true); render(b, lb, false);
+        await sleep(900);
+        await typeLine(a, la, "echo 'hello world' | rf-copy");
+        await sleep(500);
+        la.push({ p: 1, t: '' }); render(a, la, false); render(b, lb, true);
+        await sleep(700);
+        await typeLine(b, lb, 'rf-paste');
+        await sleep(500);
+        lb.push({ p: 0, t: 'hello world' }, { p: 1, t: '' });
+        render(b, lb, true);
+        await sleep(3500);
+      }
+    })();
+  })();
+
   document.querySelectorAll('.copy-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       navigator.clipboard.writeText(document.getElementById(btn.dataset.copy).innerText).then(() => {
